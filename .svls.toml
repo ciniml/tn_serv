@@ -1,0 +1,5 @@
+[verilog]
+include_paths = ["picorv32", "src"]
+
+[option]
+linter = true
