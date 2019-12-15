@@ -1,3 +1,6 @@
 [submodule "picorv32"]
 	path = picorv32
 	url = https://github.com/cliffordwolf/picorv32
+[submodule "serv"]
+	path = serv
+	url = https://github.com/olofk/serv

@@ -1,115 +1,58 @@
 module tn_picorv32_top (
-    input logic clk,
-    input logic resetn,
+    input  logic clk,
+    input  logic resetn,
     output logic [2:0] gpio
 );
+    logic        i_rst;
+    logic        i_timer_irq;
+    logic [31:0] o_ibus_adr;
+    logic        o_ibus_cyc;
+    logic [31:0] i_ibus_rdt;
+    logic        i_ibus_ack;
+    logic [31:0] o_dbus_adr;
+    logic [31:0] o_dbus_dat;
+    logic [3:0]  o_dbus_sel;
+    logic        o_dbus_we ;
+    logic        o_dbus_cyc;
+    logic [31:0] i_dbus_rdt;
+    logic        i_dbus_ack;
 
-    logic trap;
-    logic        mem_valid;
-    logic        mem_instr;
-    logic        mem_ready;
-    logic [31:0] mem_addr;
-    logic [31:0] mem_wdata;
-    logic [ 3:0] mem_wstrb;
-    logic [31:0] mem_rdata;
-    logic        mem_la_read;
-    logic        mem_la_write;
-    logic [31:0] mem_la_addr;
-    logic [31:0] mem_la_wdata;
-    logic [ 3:0] mem_la_wstrb;
-    logic        pcpi_valid;
-    logic [31:0] pcpi_insn;
-    logic [31:0] pcpi_rs1;
-    logic [31:0] pcpi_rs2;
-    logic        pcpi_wr;
-    logic [31:0] pcpi_rd;
-    logic        pcpi_wait;
-    logic        pcpi_ready;
-    logic [31:0] irq;
-    logic [31:0] eoi;
-    logic        trace_valid;
-    logic [35:0] trace_data;
-
-    picorv32 #(
-        .ENABLE_COUNTERS(0),
-        .ENABLE_COUNTERS64(0),
-        .ENABLE_REGS_DUALPORT(0),
-        .ENABLE_REGS_16_31(0)
-    ) picorv32_inst (
+    serv_rf_top serv_rf_top_inst (
         .*
     );
 
-
-    assign pcpi_wr = 0;
-    assign pcpi_rd = 0;
-    assign pcpi_wait = 0;
-    assign pcpi_ready = 0;
-
-    assign irq = 0;
-
-    logic [31:0] mem_write_mask;
-
-    localparam int RAM_SIZE = 256*4;
-    localparam int RAM_ADDRESS_BITS = $clog2(RAM_SIZE);
-    logic [RAM_ADDRESS_BITS-1:2] ram_addr;
-    logic [31:0] ram_data_in;
-    logic [31:0] ram_data_out;
-    logic [31:0] ram_buffer;
-    logic        ram_select;
-    logic        ram_write_enable;
-    logic        ram_partial_write;
-    ram32 #(
-        .RAM_SIZE(RAM_SIZE)
-    ) ram_inst (
-        .addr(ram_addr),
-        .data_in(ram_data_in),
-        .data_out(ram_data_out),
-        .we(ram_write_enable),
-        .*
-    );
-
-    assign ram_select  = mem_addr < RAM_SIZE;
-    assign ram_addr = mem_addr[RAM_ADDRESS_BITS-1:2];
-    
-    always_comb begin
-        case(mem_wstrb)
-            4'b0001: mem_write_mask = 32'h0000_00ff;
-            4'b0010: mem_write_mask = 32'h0000_ff00;
-            4'b0100: mem_write_mask = 32'h00ff_0000;
-            4'b1000: mem_write_mask = 32'hff00_0000;
-            4'b0011: mem_write_mask = 32'h0000_ffff;
-            4'b1100: mem_write_mask = 32'hffff_0000;
-            4'b1111: mem_write_mask = 32'hffff_ffff;
-            default: mem_write_mask = 0;
-        endcase
-    end
-
-    assign mem_ready = !ram_partial_write;
-    assign ram_data_in =  (ram_buffer & ~mem_write_mask) | (mem_wdata & mem_write_mask);
-    assign ram_write_enable = mem_valid && ram_select && (mem_wstrb == 4'b1111 || ram_partial_write);
+    assign i_rst = !resetn;
+    assign i_timer_irq = 0;
 
     logic [31:0] gpio_out;
     assign gpio = gpio_out[2:0];
 
-    always_comb begin
-        if( ram_select ) begin
-            mem_rdata = ram_data_out;
-        end
-        else begin
-            mem_rdata = gpio_out;
-        end
-    end 
+    servant_ram #(
+        .memfile("../serv/sw/blink.hex")
+    ) iram (
+        .i_wb_clk(clk),
+        .i_wb_adr(o_ibus_adr[7:0]),
+        .i_wb_dat(0),
+        .i_wb_sel(0),
+        .i_wb_we (0),
+        .i_wb_cyc(o_ibus_cyc),
+        .o_wb_rdt(i_ibus_rdt),
+        .o_wb_ack(i_ibus_ack)
+    );
+    servant_ram dram(
+        .i_wb_clk(clk),
+        .i_wb_adr(o_dbus_adr[7:0]),
+        .i_wb_dat(o_dbus_dat),
+        .i_wb_sel(o_dbus_sel),
+        .i_wb_we (o_dbus_we ),
+        .i_wb_cyc(o_dbus_cyc),
+        .o_wb_rdt(i_dbus_rdt),
+        .o_wb_ack(i_dbus_ack)
+    );
 
     always_ff @(posedge clk) begin
-        if( !resetn ) begin
-            ram_partial_write <= 0;
-            ram_buffer <= 0;
-            gpio_out <= 0;
+        if( o_dbus_we && o_dbus_adr[8] ) begin
+            gpio_out <= o_dbus_dat;
         end
-        else begin
-            ram_partial_write <= mem_valid && (mem_wstrb != 4'b0000 || mem_wstrb != 4'b1111) && ram_select  ? 1 : 0;
-            ram_buffer <= ram_data_in;
-            gpio_out <= mem_valid && !ram_select && mem_wstrb != 0 ? (gpio_out & ~mem_write_mask | mem_wdata & mem_write_mask) : gpio_out;
-        end
-    end    
+    end
 endmodule
