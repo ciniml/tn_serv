@@ -36,8 +36,8 @@ export PATH=$GOWIN_HOME/IDE/bin:$GOWIN_HOME/Programmer/bin:$PATH
 このリポジトリをcloneして、makeでビルドします。
 
 ```bash
-git clone https://github.com/ciniml/M5Stack_TangNano
-cd M5Stack_TangNano
+git clone --recursive https://github.com/ciniml/tn_serv
+cd tn_serv
 make
 ```
 
@@ -50,7 +50,7 @@ make
 ```bash
 $ make run
 if lsmod | grep ftdi_sio; then sudo modprobe -r ftdi_sio; fi
-programmer_cli --device GW1N-1 --run 2 --fsFile M5Stack_TangNano/impl/pnr/M5Stack_TangNano.fs
+programmer_cli --device GW1N-1 --run 2 --fsFile tn_serv/impl/pnr/tn_serv.fs
  "SRAM Program" starting on device-1...
 Programming...: [######################## ] 99%                  User Code: 0x00000000
  Status Code: 0x0001F020
@@ -62,7 +62,7 @@ Programming...: [######################## ] 99%                  User Code: 0x00
 ```bash
 $ make deploy
 if lsmod | grep ftdi_sio; then sudo modprobe -r ftdi_sio; fi
-programmer_cli --device GW1N-1 --run 6 --fsFile M5Stack_TangNano/impl/pnr/M5Stack_TangNano.fs
+programmer_cli --device GW1N-1 --run 6 --fsFile tn_serv/impl/pnr/tn_serv.fs
  "embFlash Erase,Program,Verify" starting on device-1...
 Erasing embFlash ...: [                         ] 0%                 number addresses of data:332
 Programming...: [#########################] 100%
