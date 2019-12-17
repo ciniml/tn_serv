@@ -1,6 +1,6 @@
 .PHONY: all clean synthesis run deploy
 
-BITSTREAM := impl/pnr/M5Stack_TangNano.fs
+BITSTREAM := impl/pnr/tn_serv.fs
 SRCS := $(wildcard serv/rtl/*.v) $(wildcard serv/rtl/*.sv) $(wildcard src/*.sv) $(wildcard rtl/*.cst) $(wildcard rtl/*.sdc) synthesize.cfg
 
 all: synthesis

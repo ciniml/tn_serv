@@ -6,10 +6,10 @@ set_option -prj_name tn_serv
 foreach file [glob serv/rtl/*.v] {
     add_file -hdl [file normalize $file]
 }
-add_file -hdl [file normalize serv/servant/servant_ram.v]
-add_file -hdl [file normalize src/tn_picorv32_top.sv]
-add_file -cst [file normalize src/tn_picorv32.cst]
-add_file -sdc [file normalize src/tn_picorv32.sdc]
+add_file -hdl [file normalize src/ram32.sv]
+add_file -hdl [file normalize src/tn_serv_top.sv]
+add_file -cst [file normalize src/tn_serv.cst]
+add_file -sdc [file normalize src/tn_serv.sdc]
 
 run_synthesis -opt [file normalize synthesize.cfg]
 run_pnr -timing
